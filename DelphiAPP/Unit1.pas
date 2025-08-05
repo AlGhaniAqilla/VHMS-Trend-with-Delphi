@@ -363,18 +363,67 @@ end;
 
 procedure TVHMStrend.Chart1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
+var
+  SeriesIndex, ValueIndex: Integer;
+  i: Integer;
 begin
+  SeriesIndex := -1;
+  for i := 0 to Chart1.SeriesCount - 1 do
+  begin
+    ValueIndex := Chart1.Series[i].Clicked(X, Y);
+    if ValueIndex <> -1 then
+    begin
+      SeriesIndex := i;
+      Break;
+    end;
+  end;
+
+  if SeriesIndex <> -1 then
+  begin
+    ValueIndex := Chart1.Series[SeriesIndex].Clicked(X, Y);
+    if ValueIndex <> -1 then
+    begin
+      ListBox1.Clear;
+      ListBox1.Items.Add('Series: ' + Chart1.Series[SeriesIndex].Title);
+      ListBox1.Items.Add('HM: ' + HM[ValueIndex]);
+      ListBox1.Items.Add('Tanggal: ' + DateToStr(TrendRows[ValueIndex].Calendar));
+      ListBox1.Items.Add('Value: ' + FloatToStr(Chart1.Series[SeriesIndex].YValue[ValueIndex]));
+    end;
+  end else
+  begin
+    ListBox1.Clear;
+  end;
 end;
 
 procedure TVHMStrend.Chart1ClickLegend(Sender: TCustomChart;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  seriesIndex, i, j: Integer;
+  seriesTitle: string;
 begin
-  ListBox1.Clear;
-  ListBox1.Items.Add(IntToStr(X) + ', ' + IntToStr(Y));
+  seriesIndex := Chart1.Legend.Clicked(X, Y);
 
+  if seriesIndex <> -1 then
+  begin
+    ListBox1.Clear;
+    ListBox1.Items.Add('Data for ' + Chart1.Series[seriesIndex].Title);
+    for i := 0 to Chart1.Series[seriesIndex].Count - 1 do
+    begin
+      j := round(Chart1.Series[seriesIndex].XValue[i]);
+      if (j >= 0) and (j <= High(TrendRows)) then
+      begin
+        ListBox1.Items.Add(
+          'HM: ' + HM[j] +
+          ', Tgl: ' + DateToStr(TrendRows[j].Calendar) +
+          ', Val: ' + FloatToStr(Chart1.Series[seriesIndex].YValue[i])
+        );
+      end;
+    end;
+  end;
 end;
 
 end.
+
 
 
 
