@@ -1,10 +1,12 @@
 object VHMStrend: TVHMStrend
   Left = 269
   Top = 118
-  Width = 897
-  Height = 525
+  Width = 950
+  Height = 520
   Caption = 'VHMStrend'
   Color = clBtnFace
+  Constraints.MinHeight = 520
+  Constraints.MinWidth = 950
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -13,8 +15,8 @@ object VHMStrend: TVHMStrend
   OldCreateOrder = False
   OnCreate = FormCreate
   DesignSize = (
-    881
-    486)
+    934
+    481)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -59,8 +61,8 @@ object VHMStrend: TVHMStrend
   object cekChart: TCheckListBox
     Left = 0
     Top = 184
-    Width = 145
-    Height = 252
+    Width = 198
+    Height = 247
     OnClickCheck = cekChartClick
     Anchors = [akLeft, akTop, akRight, akBottom]
     ItemHeight = 13
@@ -68,9 +70,9 @@ object VHMStrend: TVHMStrend
   end
   object Chart1: TChart
     Left = 152
-    Top = 40
-    Width = 615
-    Height = 433
+    Top = 48
+    Width = 611
+    Height = 428
     AnimatedZoomSteps = 3
     BackWall.Brush.Color = clWhite
     BackWall.Brush.Style = bsClear
@@ -138,7 +140,7 @@ object VHMStrend: TVHMStrend
     OnChange = cekChartClick
   end
   object editList: TButton
-    Left = 796
+    Left = 849
     Top = 8
     Width = 75
     Height = 25
@@ -157,8 +159,8 @@ object VHMStrend: TVHMStrend
     Text = 'Serial Number Unit'
   end
   object unCek: TButton
-    Left = 2
-    Top = 445
+    Left = 4
+    Top = 440
     Width = 75
     Height = 25
     Anchors = [akBottom]
@@ -167,12 +169,21 @@ object VHMStrend: TVHMStrend
     OnClick = unCekClick
   end
   object ListBox1: TListBox
-    Left = 772
+    Left = 770
     Top = 56
-    Width = 97
-    Height = 414
+    Width = 152
+    Height = 409
     Anchors = [akTop, akRight, akBottom]
     ItemHeight = 13
     TabOrder = 9
+  end
+  object ListBox2: TListBox
+    Left = 776
+    Top = 376
+    Width = 121
+    Height = 97
+    ItemHeight = 13
+    TabOrder = 10
+    Visible = False
   end
 end
