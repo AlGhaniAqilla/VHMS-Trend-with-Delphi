@@ -398,31 +398,11 @@ end;
 
 procedure TVHMStrend.Chart1ClickLegend(Sender: TCustomChart;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-var
-  seriesIndex, i, j: Integer;
 begin
-  if (High(TrendRows) < 0) then Exit;
-  seriesIndex := Chart1.Legend.Clicked(X, Y);
-
-  if seriesIndex <> -1 then
-  begin
-    ListBox1.Clear;
-    ListBox1.Items.Add('Data for ' + Chart1.Series[seriesIndex].Title);
-    for i := 0 to Chart1.Series[seriesIndex].Count - 1 do
-    begin
-      j := round(Chart1.Series[seriesIndex].XValue[i]);
-      if (j >= 0) and (j <= High(TrendRows)) then
-      begin
-        ListBox1.Items.Add(
-          ', Tgl: ' + DateToStr(TrendRows[j].Calendar) +
-          ', Val: ' + FloatToStr(Chart1.Series[seriesIndex].YValue[i])
-        );
-      end;
-    end;
-  end;
 end;
 
 end.
+
 
 
 
