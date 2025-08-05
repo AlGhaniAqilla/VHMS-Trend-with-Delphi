@@ -1,8 +1,8 @@
 object VHMStrend: TVHMStrend
-  Left = 188
-  Top = 117
-  Width = 922
-  Height = 480
+  Left = 269
+  Top = 118
+  Width = 897
+  Height = 525
   Caption = 'VHMStrend'
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -11,11 +11,15 @@ object VHMStrend: TVHMStrend
   Font.Name = 'MS Sans Serif'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
+  DesignSize = (
+    881
+    486)
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
-    Left = 384
-    Top = 8
+    Left = 360
+    Top = 0
     Width = 247
     Height = 39
     Caption = 'VHMS TREND'
@@ -27,97 +31,148 @@ object VHMStrend: TVHMStrend
     ParentFont = False
   end
   object Label2: TLabel
-    Left = 392
-    Top = 408
-    Width = 189
-    Height = 24
-    Caption = 'Created by ToNaY'
-    Font.Charset = ANSI_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -19
-    Font.Name = 'Magneto'
-    Font.Style = [fsBold, fsItalic]
-    ParentFont = False
+    Left = 440
+    Top = 416
+    Width = 32
+    Height = 13
+    Caption = 'Label2'
   end
   object modelUnit: TComboBox
-    Left = 24
-    Top = 8
+    Left = 0
+    Top = 0
     Width = 145
     Height = 21
     ItemHeight = 13
     TabOrder = 0
     Text = 'Model Unit'
+    OnChange = modelUnitChange
   end
   object generate: TButton
-    Left = 64
-    Top = 168
+    Left = 24
+    Top = 152
     Width = 75
     Height = 25
     Caption = 'Generate'
-    TabOrder = 1
+    TabOrder = 2
+    OnClick = generateClick
   end
   object cekChart: TCheckListBox
-    Left = 24
-    Top = 208
-    Width = 153
-    Height = 113
+    Left = 0
+    Top = 184
+    Width = 145
+    Height = 252
+    OnClickCheck = cekChartClick
+    Anchors = [akLeft, akTop, akRight, akBottom]
     ItemHeight = 13
-    TabOrder = 2
+    TabOrder = 3
   end
   object Chart1: TChart
-    Left = 200
-    Top = 64
-    Width = 689
-    Height = 345
+    Left = 152
+    Top = 40
+    Width = 615
+    Height = 433
+    AnimatedZoomSteps = 3
     BackWall.Brush.Color = clWhite
     BackWall.Brush.Style = bsClear
+    MarginBottom = 0
+    MarginLeft = 0
+    MarginRight = 5
+    MarginTop = 0
     Title.Text.Strings = (
       'TChart')
-    TabOrder = 3
-    object Memo1: TMemo
-      Left = 0
-      Top = 0
-      Width = 105
-      Height = 113
-      Lines.Strings = (
-        'Memo1')
-      TabOrder = 0
+    OnClickLegend = Chart1ClickLegend
+    BottomAxis.DateTimeFormat = 'dd/MM/yyyy'
+    BottomAxis.LabelsAngle = 45
+    BottomAxis.LabelsMultiLine = True
+    BottomAxis.LabelsOnAxis = False
+    BottomAxis.LabelsSize = 20
+    BottomAxis.MinorTickLength = 4
+    BottomAxis.TickLength = 12
+    LeftAxis.LabelsMultiLine = True
+    Legend.Alignment = laBottom
+    View3D = False
+    ParentColor = True
+    TabOrder = 4
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Constraints.MaxHeight = 700
+    Constraints.MaxWidth = 1100
+    Constraints.MinHeight = 100
+    Constraints.MinWidth = 600
+    OnMouseMove = Chart1MouseMove
+    object Series1: TLineSeries
+      Marks.ArrowLength = 8
+      Marks.Style = smsValue
+      Marks.Visible = False
+      SeriesColor = clRed
+      Pointer.InflateMargins = False
+      Pointer.Style = psDiamond
+      Pointer.Visible = True
+      XValues.DateTime = True
+      XValues.Name = 'X'
+      XValues.Multiplier = 1.000000000000000000
+      XValues.Order = loAscending
+      YValues.DateTime = False
+      YValues.Name = 'Y'
+      YValues.Multiplier = 1.000000000000000000
+      YValues.Order = loNone
     end
   end
   object wktDari: TDateTimePicker
-    Left = 24
-    Top = 80
+    Left = 0
+    Top = 72
     Width = 145
     Height = 21
     Date = 45862.771494131940000000
     Time = 45862.771494131940000000
-    TabOrder = 4
+    TabOrder = 5
+    OnChange = cekChartClick
   end
   object wktHingga: TDateTimePicker
-    Left = 24
-    Top = 120
+    Left = 0
+    Top = 112
     Width = 145
     Height = 21
     Date = 45862.771650833330000000
     Time = 45862.771650833330000000
-    TabOrder = 5
+    TabOrder = 6
+    OnChange = cekChartClick
   end
   object editList: TButton
-    Left = 808
-    Top = 16
+    Left = 796
+    Top = 8
     Width = 75
     Height = 25
+    Anchors = [akTop, akRight]
     Caption = 'Edit List'
-    TabOrder = 6
+    TabOrder = 7
     OnClick = editListClick
   end
   object serialUnit: TComboBox
-    Left = 24
-    Top = 48
+    Left = 0
+    Top = 40
     Width = 145
     Height = 21
     ItemHeight = 13
-    TabOrder = 7
+    TabOrder = 1
     Text = 'Serial Number Unit'
+  end
+  object unCek: TButton
+    Left = 2
+    Top = 445
+    Width = 75
+    Height = 25
+    Anchors = [akBottom]
+    Caption = 'UN/Cek ALL'
+    TabOrder = 8
+    OnClick = unCekClick
+  end
+  object ListBox1: TListBox
+    Left = 772
+    Top = 56
+    Width = 97
+    Height = 414
+    Anchors = [akTop, akRight, akBottom]
+    ItemHeight = 13
+    TabOrder = 9
   end
 end
