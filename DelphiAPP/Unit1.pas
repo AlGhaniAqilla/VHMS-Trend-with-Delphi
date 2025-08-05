@@ -20,13 +20,19 @@ type
     Label1: TLabel;
     Label2: TLabel;
     unCek: TButton;
-    Memo1: TMemo;
+    ListBox1: TListBox;
+    Series1: TLineSeries;
 
     procedure editListClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure modelUnitChange(Sender: TObject);
     procedure generateClick(Sender: TObject);
     procedure cekChartClick(Sender: TObject);
+    procedure unCekClick(Sender: TObject);
+    procedure Chart1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
+    procedure Chart1ClickLegend(Sender: TCustomChart; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
   private
     procedure UpdateListUnit;
     procedure UpdateChart;
@@ -42,6 +48,7 @@ type
 var
   VHMStrend: TVHMStrend;
   AxisItems: TStringList;
+  HM: TStringList;
   TrendRows: array of TTrendRow;
   UnitList: array of record
     Model: string;
@@ -205,16 +212,21 @@ begin
       if Pos('Axis Item', lines[i]) = 1 then
       begin
         axisLine := lines[i];
+        axisLine := StringReplace(axisLine, ' ', '', [rfReplaceAll]);
         AxisItems.CommaText := Copy(axisLine, Pos(',', axisLine) + 1, MaxInt);
         Break;
       end;
     end;
     cekChart.Items.Clear;
-    for i := 0 to AxisItems.Count - 1 do
+    for i := 2 to AxisItems.Count - 1 do
       cekChart.Items.Add(AxisItems[i]);
     // Centang default SMR
     for i := 0 to cekChart.Items.Count - 1 do
-      cekChart.Checked[i] := (cekChart.Items[i] = 'SMR');
+       if cekChart.Items[i] = 'Eng.OilTmp.MAX' then cekChart.Checked[i] := true
+      else if cekChart.Items[i] = 'CoolTemp.MAX' then cekChart.Checked[i] := true
+      else if cekChart.Items[i] = 'HydOilTempMax' then cekChart.Checked[i] := true
+      else if cekChart.Items[i] = 'HydOilTempAve' then cekChart.Checked[i] := true
+      else if cekChart.Items[i] = 'PTOTempMax' then cekChart.Checked[i] := true;
   finally
     AxisItems.Free;
   end;
@@ -242,6 +254,9 @@ begin
       fields.CommaText := dataLine;
       if fields.Count < 3 then Continue;
 
+      //HM
+      ListBox1.Items.Add(fields[1]);
+
       // Calendar
       s := fields[2];
       p1 := Pos('|', s);
@@ -255,7 +270,7 @@ begin
           offsetStr := '0';
         epoch := StrToInt64Def(epochStr, 0);
         offset := StrToInt64Def(offsetStr, 0);
-        TrendRows[i - dataStart].Calendar := UnixToDateTime(epoch + offset);
+        TrendRows[i - dataStart].Calendar := UnixToDateTime(epoch + offset); 
       end
       else
         TrendRows[i - dataStart].Calendar := 0;
@@ -264,12 +279,10 @@ begin
       SetLength(TrendRows[i - dataStart].Values, cekChart.Items.Count);
       for j := 0 to cekChart.Items.Count - 1 do
       begin
-        if (j + 3) < fields.Count then
+        if (j + 1) < fields.Count then
           TrendRows[i - dataStart].Values[j] := StrToFloatDef(fields[j + 3], 0)
         else
           TrendRows[i - dataStart].Values[j] := 0;
-        if cekChart.Items[j] = 'SMR' then
-          TrendRows[i - dataStart].Values[j] := TrendRows[i - dataStart].Values[j] / 10;
       end;
     end;
   finally
@@ -277,8 +290,15 @@ begin
     lines.Free;
   end;
 
+  // ubah tanggal
+  wktDari.Date := TrendRows[0].Calendar;
+  wktHingga.Date := TrendRows[High(TrendRows)].Calendar;
+
   // Tampilkan chart awal
   UpdateChart;
+  // Memo1.Clear;
+  // Memo1.Lines.Add(DateTimeToStr(TrendRows[0].Calendar));
+  //Memo1.Lines.Add(fields[0]);
 end;
 
 procedure TVHMStrend.cekChartClick(Sender: TObject);
@@ -293,6 +313,7 @@ var
   dari, hingga: TDateTime;
 begin
   Chart1.SeriesList.Clear;
+  Chart1.BottomAxis.Title.Angle := 45;
   dari := wktDari.Date;
   hingga := wktHingga.Date;
   for i := 0 to cekChart.Items.Count - 1 do
@@ -301,13 +322,59 @@ begin
       series := TLineSeries.Create(Chart1);
       series.Title := cekChart.Items[i];
       Chart1.AddSeries(series);
+          
       for j := 0 to High(TrendRows) do
         if (TrendRows[j].Calendar >= dari) and (TrendRows[j].Calendar <= hingga) then
-          series.AddXY(TrendRows[j].Calendar, TrendRows[j].Values[i]);
+          series.AddXY(j, TrendRows[j].Values[i], DateToStr(TrendRows[j].Calendar));
+  end;
+
+end;
+
+procedure TVHMStrend.unCekClick(Sender: TObject);
+var
+  i: Integer;
+  AllCek: Boolean;
+begin
+  AllCek := False;
+  for i:= 0 to cekChart.Items.Count - 1 do
+  begin
+    if not cekChart.Checked[i] then
+    begin
+      AllCek := True;
+      Break;
     end;
+  end;
+
+  if AllCek then
+  begin
+    for i:= 0 to cekChart.Items.Count - 1 do
+    begin
+      cekChart.Checked[i] := True;
+    end;
+    end
+    else
+    begin
+      for i:= 0 to cekChart.Items.Count - 1 do
+      begin
+       cekChart.Checked[i] := False;
+      end;
+    end;
+end;
+
+procedure TVHMStrend.Chart1MouseMove(Sender: TObject; Shift: TShiftState;
+  X, Y: Integer);
+begin
+end;
+
+procedure TVHMStrend.Chart1ClickLegend(Sender: TCustomChart;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  ListBox1.Clear;
+  ListBox1.Items.Add(IntToStr(X) + ', ' + IntToStr(Y));
 
 end;
 
 end.
+
 
 
