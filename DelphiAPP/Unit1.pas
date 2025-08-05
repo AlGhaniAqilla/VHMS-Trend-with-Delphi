@@ -22,6 +22,7 @@ type
     unCek: TButton;
     ListBox1: TListBox;
     Series1: TLineSeries;
+    ListBox2: TListBox;
 
     procedure editListClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -255,7 +256,7 @@ begin
       if fields.Count < 3 then Continue;
 
       //HM
-      ListBox1.Items.Add(fields[1]);
+      ListBox2.Items.Add(fields[1]);
 
       // Calendar
       s := fields[2];
@@ -367,6 +368,7 @@ var
   SeriesIndex, ValueIndex: Integer;
   i: Integer;
 begin
+  if (High(TrendRows) < 0) then Exit;
   SeriesIndex := -1;
   for i := 0 to Chart1.SeriesCount - 1 do
   begin
@@ -385,7 +387,6 @@ begin
     begin
       ListBox1.Clear;
       ListBox1.Items.Add('Series: ' + Chart1.Series[SeriesIndex].Title);
-      ListBox1.Items.Add('HM: ' + HM[ValueIndex]);
       ListBox1.Items.Add('Tanggal: ' + DateToStr(TrendRows[ValueIndex].Calendar));
       ListBox1.Items.Add('Value: ' + FloatToStr(Chart1.Series[SeriesIndex].YValue[ValueIndex]));
     end;
@@ -399,8 +400,8 @@ procedure TVHMStrend.Chart1ClickLegend(Sender: TCustomChart;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   seriesIndex, i, j: Integer;
-  seriesTitle: string;
 begin
+  if (High(TrendRows) < 0) then Exit;
   seriesIndex := Chart1.Legend.Clicked(X, Y);
 
   if seriesIndex <> -1 then
@@ -413,7 +414,6 @@ begin
       if (j >= 0) and (j <= High(TrendRows)) then
       begin
         ListBox1.Items.Add(
-          'HM: ' + HM[j] +
           ', Tgl: ' + DateToStr(TrendRows[j].Calendar) +
           ', Val: ' + FloatToStr(Chart1.Series[seriesIndex].YValue[i])
         );
@@ -423,7 +423,6 @@ begin
 end;
 
 end.
-
 
 
 
