@@ -60,6 +60,8 @@ type
 var
   VHMStrend: TVHMStrend;
 
+  SavedArea: TBitmap;
+
   minorVersi, varianKode: string;
   EngineModel: string;
   EGSerial: TStringList;
@@ -535,9 +537,14 @@ end;
 procedure TVHMStrend.UpdateChart;
 var
   i, j: Integer;
+  checkedIndex: Integer;
   dari, hingga: TDateTime;
   ValueData, Rate: double;
   RateStr: string;
+  UrgentSeries, CautionSeries: TLineSeries;
+  maxVal, currentVal, threshold: double;
+  message: string;
+  maxValDate, firstDateAboveThreshold, lastDateAboveThreshold: TDateTime;
 begin
   // JUDUL CHAR
   Chart1.Title.Text.Clear;
@@ -578,12 +585,136 @@ begin
             Xcount := j + 1;
           end;
   end;
+
+  Memo1.Clear;
   if Ycount = 1 then
   begin
+    Chart1.Series[0].SeriesColor := clGreen;
+
+    UrgentSeries := TLineSeries.Create(Chart1);
+    UrgentSeries.Title := 'Urgent';
+    UrgentSeries.SeriesColor := clRed;
+    UrgentSeries.LinePen.Width := 2;
+    Chart1.AddSeries(UrgentSeries);
+
+    CautionSeries := TLineSeries.Create(Chart1);
+    CautionSeries.Title := 'Caution';
+    CautionSeries.SeriesColor := clYellow;
+    CautionSeries.LinePen.Width := 2;
+    Chart1.AddSeries(CautionSeries);
+
+    for j := 0 to High(TrendRows) do
+      if (TrendRows[j].Calendar >= dari) and (TrendRows[j].Calendar <= hingga) then
+      begin
+        UrgentSeries.AddXY(j, 115, '');
+        CautionSeries.AddXY(j, 95, '');
+      end;
+
     Chart1.LeftAxis.Title.Caption := selectedScale[0];
+     // --- Analysis for high values ---
+    checkedIndex := -1;
+    for i := 0 to cekChart.Items.Count - 1 do
+      if cekChart.Checked[i] then
+      begin
+        checkedIndex := i;
+        break;
+      end;
+
+    if checkedIndex <> -1 then
+    begin
+      maxVal := 0;
+      maxValDate := 0;
+
+      // First pass: Find max value
+      for j := 0 to High(TrendRows) do
+      begin
+        if (TrendRows[j].Calendar >= dari) and (TrendRows[j].Calendar <= hingga) then
+        begin
+          ValueData := TrendRows[j].Values[checkedIndex];
+          if ValueData = 0 then
+            currentVal := 0
+          else
+          begin
+            RateStr := ItemRateStr[checkedIndex + 2];
+            RateStr := StringReplace(RateStr, '.', ',', [rfReplaceAll]);
+            Rate := StrToFloat(RateStr);
+            if Rate > 0 then
+              currentVal := ValueData / Rate
+            else
+              currentVal := 0;
+          end;
+
+          if currentVal > maxVal then
+          begin
+            maxVal := currentVal;
+            maxValDate := TrendRows[j].Calendar;
+          end;
+        end;
+      end;
+
+      // Determine threshold and status
+      message := '';
+      threshold := 0;
+      if maxVal > 115 then
+      begin
+        Memo1.Visible := True;
+        threshold := 115;
+        message := 'DANGER';
+      end
+      else if maxVal > 95 then
+      begin
+        Memo1.Visible := True;
+        threshold := 95;
+        message := 'PERINGATAN';
+      end;
+
+      // Second pass: If threshold is passed, find date range and build message
+      if threshold > 0 then
+      begin
+        firstDateAboveThreshold := 0;
+        lastDateAboveThreshold := 0;
+        for j := 0 to High(TrendRows) do
+        begin
+          if (TrendRows[j].Calendar >= dari) and (TrendRows[j].Calendar <= hingga) then
+          begin
+            ValueData := TrendRows[j].Values[checkedIndex];
+            if ValueData = 0 then
+              currentVal := 0
+            else
+            begin
+              RateStr := ItemRateStr[checkedIndex + 2];
+              RateStr := StringReplace(RateStr, '.', ',', [rfReplaceAll]);
+              Rate := StrToFloat(RateStr);
+              if Rate > 0 then
+                currentVal := ValueData / Rate
+              else
+                currentVal := 0;
+            end;
+
+            if currentVal > threshold then
+            begin
+              if firstDateAboveThreshold = 0 then
+                firstDateAboveThreshold := TrendRows[j].Calendar;
+              lastDateAboveThreshold := TrendRows[j].Calendar;
+            end;
+          end;
+        end;
+
+        message := message + ': Nilai tertinggi ' + FormatFloat('0.##', maxVal) + ' pada tanggal ' + DateToStr(maxValDate) + '.';
+        Memo1.Lines.Add(message);
+        if firstDateAboveThreshold <> 0 then
+        begin
+          message := 'Terjadi dari tanggal ' + DateToStr(firstDateAboveThreshold) + ' sampai ' + DateToStr(lastDateAboveThreshold) + '.';
+          Memo1.Lines.Add(message);
+        end;
+      end;
+    end;
   end
-    else
+  else
+  begin
       Chart1.LeftAxis.Title.Caption := '';
+      Memo1.Visible := False;
+  end;
 end;
 
 // Mengelola info
@@ -596,6 +727,8 @@ var
   i: Integer;
   R: TRect;
   xScreen, Yscreen: Integer;
+  Xmin, Xmax, Ymin, Ymax: Integer;
+  XminLast, YminLast, XmaxLast, YmaxLast: Integer;
 
 begin
   if Chart1.SeriesCount = 0 then exit; // agar tidak eror saat tidak ada item yg dipilih
@@ -606,13 +739,10 @@ begin
     DataUnit.Show;
     DataUnit.Memo1.Clear;
     lebarXchart := Chart1.BottomAxis.IEndPos - Chart1.BottomAxis.IStartPos;
-    // lebarYchart := Chart1.LeftAxis.IEndPos - Chart1.LeftAxis.IStartPos;
-    
+
     pitchX := lebarXchart / Xcount;
-    // pitchY := lebarYchart / Ycount;
 
     Xpos := Round((X - Chart1.BottomAxis.IStartPos) / pitchX);
-    // Ypos := Round(Y / pitchY);
 
     if Xpos = 1 then
       Xpos := Xpos - 1;
@@ -621,43 +751,27 @@ begin
 
     DataUnit.Memo1.Lines.Add(selectedKode + ' Model: ' + selectedModel);
     DataUnit.Memo1.Lines.Add('SN UNIT: ' + selectedSerial);
-    // DataUnit.Memo1.Lines.Add('Engine SN: ' + 'SN EG');
+    DataUnit.Memo1.Lines.Add('Engine SN 1, 2, 3: ' + EGSerial[1] + ', ' + EGSerial[2] + ', ' + EGSerial[3]);
     DataUnit.Memo1.Lines.Add('HM: ' + SelectedHM[Xpos]);
     DataUnit.Memo1.Lines.Add('Tanggal: ' + selectedCalendar[Xpos]);
     DataUnit.Memo1.Lines.Add('');
-    // Chart1.LeftAxis.IStartPos;
-    // Chart1.LeftAxis.IEndPos;
-    // Chart1.Canvas.Line(X, Chart1.LeftAxis.IStartPos, X, Chart1.LeftAxis.IEndPos);
-    // Chart1.Canvas.Arc(X - 5, Y, X, Y - 5, X + 5, Y, X + 5, Y);
-    // Chart1.Canvas.Ellipse(X, Y, X + 10, Y + 10);
-    // Chart1.Canvas.Brush.Color := Chart1.Series[1].SeriesColor;
 
     if Chart1.SeriesCount = 0 then exit;
-    for i:= 0 to Chart1.SeriesCount - 1 do
-      begin
-        DataUnit.Memo1.Lines.Add(Chart1.Series[i].Title + ': ' + FloatToStr(Chart1.Series[i].YValue[Xpos]) + ' ' + selectedScale[i]);
-        // garis
-        // DataUnit.Memo1.lines.Add('garisn');
-      end;
-    
-    DataUnit.Memo1.lines.Add('Xmouse ' + IntToStr(X));
-    DataUnit.Memo1.lines.Add('Pitch ' + FloatToStr(pitchX));
-    DataUnit.Memo1.lines.Add('X - star ' + IntToStr(X - Chart1.BottomAxis.IStartPos));
-    DataUnit.Memo1.lines.Add('Xpos ' + IntToStr(Xpos));
+    if Ycount = 1 then
+      DataUnit.Memo1.Lines.Add(Chart1.Series[0].Title + ': ' + FloatToStr(Chart1.Series[0].YValue[Xpos]) + ' ' + selectedScale[0])
+      else
+        for i:= 0 to Chart1.SeriesCount - 1 do
+          DataUnit.Memo1.Lines.Add(Chart1.Series[i].Title + ': ' + FloatToStr(Chart1.Series[i].YValue[Xpos]) + ' ' + selectedScale[i]);
 
-    DataUnit.Memo1.lines.Add('Ymouse ' + IntToStr(Y));
-    DataUnit.Memo1.lines.Add('Y - star ' + IntToStr(Y - Chart1.LeftAxis.IStartPos));
+    // DataUnit.Memo1.lines.Add('Xmouse ' + IntToStr(X));
+    // DataUnit.Memo1.lines.Add('Pitch ' + FloatToStr(pitchX));
+    // DataUnit.Memo1.lines.Add('X - star ' + IntToStr(X - Chart1.BottomAxis.IStartPos));
+    // DataUnit.Memo1.lines.Add('Xpos ' + IntToStr(Xpos));
 
-    xScreen := Series1.CalcXPos(Xpos);
-    Yscreen := Series1.CalcYPos(Xpos);
+    // DataUnit.Memo1.lines.Add('Ymouse ' + IntToStr(Y));
+    // DataUnit.Memo1.lines.Add('Y - star ' + IntToStr(Y - Chart1.LeftAxis.IStartPos));
 
-    DataUnit.Memo1.lines.Add('Xscren' + IntToStr(Xscreen));
-    DataUnit.Memo1.lines.Add('Yscreen' + FloatToStr(Yscreen));
-
-    Chart1.Canvas.Ellipse(Xscreen - 6, Yscreen - 6, Xscreen + 6, Yscreen + 6);
-    Chart1.Canvas.Brush.Color := clGreen;
-
-    DataUnit.Memo1.lines.Add('Scoun' + FloatToStr(Chart1.SeriesCount));
+    // DataUnit.Memo1.lines.Add('Scoun' + FloatToStr(Chart1.SeriesCount));
 
     // Ytitik := Series1.YValue[0];
     // DataUnit.Memo1.lines.Add('Ytitik' + FloatToStr(Ytitik));
@@ -671,6 +785,39 @@ begin
     //       DataUnit.Memo1.lines.Add('Ypos ' + IntToStr(Ypos));
     //   end;
     // end;
+
+    xScreen := Series1.CalcXPos(Xpos);
+    Yscreen := Series1.CalcYPos(Xpos);
+
+    Xmin := xScreen - 5;
+    Xmax := Xmin + 10;
+    Ymin := Chart1.LeftAxis.IStartPos;
+    Ymax := Chart1.LeftAxis.IEndPos;
+
+    SavedArea := TBitmap.Create;
+
+    // menempelkan
+    SavedArea.Canvas.CopyRect(Rect(Xmin, Ymin, Xmax, Ymax), SavedArea.Canvas, Point(0, 0));
+    SavedArea.Free;
+
+    //menyalin
+    SavedArea.Canvas.CopyRect(React(0, 0, 10, Chart1.LeftAxis.IEndPos - Chart1.LeftAxis.IStartPos), Chart1.Canvas, Point(Xmin, Ymin));
+    XminLast := Xmin;
+    YminLast := Ymin;
+    XmaxLast := Xmax;
+    YmaxLast := Ymax;
+
+    
+
+    //Chart1.Canvas.ClipRectangle();
+
+    Chart1.Canvas.Brush.Color := clBlue;
+    Chart1.Canvas.Rectangle(Xmin, Ymin, Xmax, Ymax);
+
+
+
+    Chart1.Canvas.Brush.Color := clGreen;
+    Chart1.Canvas.Ellipse(Xscreen - 4, Yscreen - 4, Xscreen + 4, Yscreen + 4);
   end;
 end;
 
